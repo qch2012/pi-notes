@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0006 — Prompt Templates</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<article class="page">
+  <div class="kicker">Lesson 0006 · Customization</div>
+  <h1>Prompt templates: reusable slash-command prompts</h1>
+  <p class="lede">The simplest of the four customization surfaces. A prompt template is a single Markdown file; its filename becomes a slash command. If you've written custom slash commands for another agent, this is the same idea with a small, precise argument-substitution syntax.</p>
+
+  <div class="box box-mission">
+    <span class="box-label">Why this lesson</span>
+    Second of four customization lessons. This is the one you'll reach for most often day-to-day — it's the fastest way to turn a prompt you keep retyping into a one-word command.
+  </div>
+
+  <h2>1. The mechanism</h2>
+  <p><code>review.md</code> becomes <code>/review</code>. That's the whole model. Type <code>/</code> and the template name; autocomplete shows available templates with their descriptions.</p>
+  <pre><code>---
+description: Review staged git changes
+---
+Review the staged changes (`git diff --cached`). Focus on:
+- Bugs and logic errors
+- Security issues
+- Error handling gaps</code></pre>
+  <p><code>description</code> is optional — if omitted, the first non-empty line is used instead. Add <code>argument-hint</code> to show expected arguments in autocomplete (<code>&lt;required&gt;</code>, <code>[optional]</code>):</p>
+  <pre><code>---
+description: Review PRs from URLs with structured issue and code analysis
+argument-hint: "&lt;PR-URL&gt;"
+---</code></pre>
+  <p>Which renders in autocomplete as:</p>
+  <pre><code>→ pr   &lt;PR-URL&gt;       — Review PRs from URLs with structured issue and code analysis
+  is   &lt;issue&gt;        — Analyze GitHub issues (bugs or feature requests)
+  wr   [instructions] — Finish the current task end-to-end</code></pre>
+
+  <h2>2. Where they live</h2>
+  <table>
+    <tr><th>Location</th><th>Scope</th></tr>
+    <tr><td><code>~/.pi/agent/prompts/*.md</code></td><td>Global</td></tr>
+    <tr><td><code>.pi/prompts/*.md</code></td><td>Project — only after trust</td></tr>
+    <tr><td>Packages</td><td><code>prompts/</code> dirs or <code>pi.prompts</code> in <code>package.json</code></td></tr>
+    <tr><td><code>settings.json</code> <code>prompts</code> array</td><td>Any files or directories</td></tr>
+    <tr><td><code>--prompt-template &lt;path&gt;</code></td><td>CLI, repeatable</td></tr>
+  </table>
+  <p>Discovery in a <code>prompts/</code> directory is <strong>non-recursive</strong> — templates in subdirectories need to be added explicitly via the <code>prompts</code> setting or a package manifest. Disable auto-discovery with <code>--no-prompt-templates</code>.</p>
+
+  <h2>3. Argument substitution</h2>
+  <table>
+    <tr><th>Syntax</th><th>Meaning</th></tr>
+    <tr><td><code>$1</code>, <code>$2</code>, ...</td><td>Positional arguments</td></tr>
+    <tr><td><code>$@</code> or <code>$ARGUMENTS</code></td><td>All arguments joined</td></tr>
+    <tr><td><code>${1:-default}</code></td><td>Arg 1 if present/non-empty, else <code>default</code></td></tr>
+    <tr><td><code>${@:-default}</code> / <code>${ARGUMENTS:-default}</code></td><td>All args if present, else <code>default</code></td></tr>
+    <tr><td><code>${@:N}</code></td><td>Args from the Nth position (1-indexed)</td></tr>
+    <tr><td><code>${@:N:L}</code></td><td><code>L</code> args starting at N</td></tr>
+  </table>
+  <pre><code>---
+description: Create a component
+---
+Create a React component named $1 with features: $@</code></pre>
+  <pre><code>/component Button "onClick handler" "disabled support"</code></pre>
+  <p>Defaults are handy for optional trailing arguments:</p>
+  <pre><code>Summarize the current state in ${1:-7} bullet points.</code></pre>
+
+  <h2>4. Usage examples</h2>
+  <pre><code>/review                           # expands review.md as-is
+/component Button                 # expands with $1 = Button
+/component Button "click handler" # $1 = Button, $2 = "click handler"</code></pre>
+
+  <details class="recall">
+    <summary>Retrieval check — no peeking until you've tried</summary>
+    <p>Without scrolling up: is discovery of templates inside subdirectories of <code>prompts/</code> automatic?</p>
+    <div class="answer">
+      No — <code>prompts/</code> discovery is non-recursive. Templates in subdirectories must be added explicitly via the <code>prompts</code> setting array or a package manifest.
+    </div>
+  </details>
+
+  <div class="box box-source">
+    <span class="box-label">Primary source</span>
+    <a href="https://pi.dev/docs/latest/prompt-templates.md">Prompt Templates</a>.
+  </div>
+
+  <div class="box box-ask">
+    <span class="box-label">Stuck, or something behaved differently than expected?</span>
+    Ask your teacher (me) directly — describe what you ran and what happened. That's exactly the kind of detail that turns into the next lesson or a learning record.
+  </div>
+
+  <footer class="lesson-nav">
+    <span>See also: <a href="../reference/pi-essentials.html">Pi Essentials reference</a></span>
+    <span>Next: <a href="0007-extensions.html">Lesson 0007 — Extensions →</a></span>
+  </footer>
+</article>
+</body>
+</html>

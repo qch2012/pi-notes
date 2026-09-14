@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0005 — Skills</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<article class="page">
+  <div class="kicker">Lesson 0005 · Customization</div>
+  <h1>Skills: on-demand capability packages</h1>
+  <p class="lede">A skill is a folder with a <code>SKILL.md</code> describing what it does and when to use it, plus whatever scripts and reference docs it needs. Pi implements the open <a href="https://agentskills.io/specification">Agent Skills standard</a>, so skills are portable across harnesses that support it — including ones you may already have from Claude Code.</p>
+
+  <div class="box box-mission">
+    <span class="box-label">Why this lesson</span>
+    First of four customization lessons matching the mission's "install and use existing Skills/Extensions/Prompt Templates/Packages, and knows how to write a basic one." Skills are the lowest-friction one to start with — no code required.
+  </div>
+
+  <h2>1. The core mechanism: progressive disclosure</h2>
+  <p>Pi doesn't load full skill content into context by default. At startup it scans all skill locations and extracts just the <code>name</code> and <code>description</code> from each — those go into the system prompt as a directory. When a task matches a description, the agent uses <code>read</code> (or <code>bash</code> if <code>read</code> is unavailable) to load the full <code>SKILL.md</code>, then follows its instructions. Full content only enters context when it's actually relevant.</p>
+  <p>This means <strong>the description is the entire selection mechanism</strong> — vague descriptions mean the skill never gets picked up:</p>
+  <table>
+    <tr><th></th><th>Description</th></tr>
+    <tr><td>Good</td><td><code>Extracts text and tables from PDF files, fills PDF forms, and merges multiple PDFs. Use when working with PDF documents.</code></td></tr>
+    <tr><td>Poor</td><td><code>Helps with PDFs.</code></td></tr>
+  </table>
+
+  <h2>2. Where skills live</h2>
+  <table>
+    <tr><th>Location</th><th>Scope</th></tr>
+    <tr><td><code>~/.pi/agent/skills/</code>, <code>~/.agents/skills/</code></td><td>Global</td></tr>
+    <tr><td><code>.pi/skills/</code>, <code>.agents/skills/</code> (cwd and ancestors up to repo root)</td><td>Project — only after trust</td></tr>
+    <tr><td>Packages</td><td><code>skills/</code> dirs or <code>pi.skills</code> in <code>package.json</code></td></tr>
+    <tr><td><code>settings.json</code> <code>skills</code> array</td><td>Any files or directories you point at</td></tr>
+    <tr><td><code>--skill &lt;path&gt;</code></td><td>CLI, repeatable, additive even with <code>--no-skills</code></td></tr>
+  </table>
+  <p>Discovery rule of thumb: in <code>~/.pi/agent/skills/</code> and <code>.pi/skills/</code>, standalone root <code>.md</code> files with valid frontmatter count as skills; everywhere, a directory containing <code>SKILL.md</code> is discovered recursively. Disable auto-discovery entirely with <code>--no-skills</code> (explicit <code>--skill</code> paths still load).</p>
+
+  <h3>Using skills from Claude Code or Codex directly</h3>
+  <p>No conversion step — just point Pi at the directory:</p>
+  <pre><code>{
+  "skills": ["~/.claude/skills", "~/.codex/skills"]
+}</code></pre>
+
+  <h2>3. Invoking a skill explicitly</h2>
+  <p>Skills auto-register as <code>/skill:name</code> commands. Models don't always self-select a skill even when it matches — force it directly when needed:</p>
+  <pre><code>/skill:brave-search
+/skill:pdf-tools extract</code></pre>
+  <p>Arguments after the command name append to the skill content as <code>User: &lt;args&gt;</code>. Toggle this registration with <code>enableSkillCommands</code> in settings (default <code>true</code>).</p>
+
+  <h2>4. Writing a basic skill</h2>
+  <pre><code>my-skill/
+├── SKILL.md              # required: frontmatter + instructions
+├── scripts/
+│   └── process.sh
+└── references/
+    └── api-reference.md</code></pre>
+  <pre><code>---
+name: my-skill
+description: What this skill does and when to use it. Be specific.
+---
+
+# My Skill
+
+## Setup
+
+Run once before first use:
+```bash
+cd /path/to/skill && npm install
+```
+
+## Usage
+
+```bash
+./scripts/process.sh &lt;input&gt;
+```</code></pre>
+  <p>Reference other files with relative paths from the skill directory — <code>[reference guide](references/REFERENCE.md)</code>. Frontmatter fields:</p>
+  <table>
+    <tr><th>Field</th><th>Required</th><th>Notes</th></tr>
+    <tr><td><code>name</code></td><td>Yes</td><td>≤64 chars, lowercase a-z/0-9/hyphens, no leading/trailing or consecutive hyphens. Unlike the base standard, Pi does not require this to match the parent directory name.</td></tr>
+    <tr><td><code>description</code></td><td>Yes</td><td>≤1024 chars — this is what drives selection</td></tr>
+    <tr><td><code>license</code></td><td>No</td><td>—</td></tr>
+    <tr><td><code>compatibility</code></td><td>No</td><td>≤500 chars, environment requirements</td></tr>
+    <tr><td><code>allowed-tools</code></td><td>No</td><td>Space-delimited pre-approved tools (experimental)</td></tr>
+    <tr><td><code>disable-model-invocation</code></td><td>No</td><td>If <code>true</code>, hidden from the system prompt — only reachable via <code>/skill:name</code></td></tr>
+  </table>
+  <p>Missing or malformed <code>description</code>/frontmatter produces a warning and the skill doesn't load; most other spec violations warn but still load. Name collisions across locations warn and keep the first one found.</p>
+  <p><strong>Don't feel obligated to write these by hand.</strong> Pi can generate a skill for a workflow you describe — that's often faster and more reliable than authoring frontmatter yourself.</p>
+
+  <h2>5. Security note</h2>
+  <p>Skills can instruct the model to perform any action, and may include executable code the model invokes directly. Review skill content — yours or third-party — before use, same diligence as reviewing a shell script from the internet.</p>
+
+  <h2>6. Where to find existing skills</h2>
+  <ul>
+    <li><a href="https://github.com/anthropics/skills">Anthropic Skills</a> — document processing (docx/pdf/pptx/xlsx), web development</li>
+    <li><a href="https://github.com/badlogic/pi-skills">Pi Skills</a> — web search, browser automation, Google APIs, transcription</li>
+  </ul>
+
+  <details class="recall">
+    <summary>Retrieval check — no peeking until you've tried</summary>
+    <p>Without scrolling up: what's the one piece of a skill that's always loaded into context, versus what only loads on demand?</p>
+    <div class="answer">
+      Only <code>name</code> and <code>description</code> are always in the system prompt. Full <code>SKILL.md</code> content (and any referenced scripts/docs) loads on demand, via <code>read</code>, only when the agent decides the skill applies.
+    </div>
+  </details>
+
+  <div class="box box-source">
+    <span class="box-label">Primary source</span>
+    <a href="https://pi.dev/docs/latest/skills.md">Skills</a> and the <a href="https://agentskills.io/specification">Agent Skills specification</a>.
+  </div>
+
+  <div class="box box-ask">
+    <span class="box-label">Stuck, or something behaved differently than expected?</span>
+    Ask your teacher (me) directly — describe what you ran and what happened. That's exactly the kind of detail that turns into the next lesson or a learning record.
+  </div>
+
+  <footer class="lesson-nav">
+    <span>See also: <a href="../reference/pi-essentials.html">Pi Essentials reference</a></span>
+    <span>Next: <a href="0006-prompt-templates.html">Lesson 0006 — Prompt templates →</a></span>
+  </footer>
+</article>
+</body>
+</html>

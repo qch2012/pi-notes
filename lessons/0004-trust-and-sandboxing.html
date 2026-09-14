@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0004 — Trust & Sandboxing</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<article class="page">
+  <div class="kicker">Lesson 0004 · Safety model</div>
+  <h1>Trust and sandboxing: what Pi actually protects you from</h1>
+  <p class="lede">This is the lesson most worth reading carefully before pointing Pi at a repo you don't fully control. The short version: project trust is a config-loading gate, not a sandbox — and Pi ships with <strong>no sandbox at all</strong> by default.</p>
+
+  <div class="box box-mission">
+    <span class="box-label">Why this lesson</span>
+    Your mission names this directly: "Understands the trust/sandboxing model well enough to use it safely on real repos." Getting this wrong is the mid-task surprise most likely to actually cost you something, unlike the other deltas which are just workflow friction.
+  </div>
+
+  <h2>1. Project trust: what it is</h2>
+  <p>Project trust controls one thing only: <strong>whether Pi loads project-local configuration</strong> before you've had a chance to look at it. Specifically, a project is considered to have resources requiring trust if it has any of:</p>
+  <ul>
+    <li><code>.pi/settings.json</code></li>
+    <li><code>.pi/extensions</code>, <code>.pi/skills</code>, <code>.pi/prompts</code>, or <code>.pi/themes</code></li>
+    <li><code>.pi/SYSTEM.md</code> or <code>.pi/APPEND_SYSTEM.md</code></li>
+    <li>project <code>.agents/skills</code> in the cwd or an ancestor directory</li>
+  </ul>
+  <p>A bare <code>.pi</code> directory with none of the above doesn't trigger a trust prompt. And critically: <strong>context files load regardless of trust</strong> — <code>AGENTS.md</code>, <code>CLAUDE.md</code>, <code>AGENTS.override.md</code> are read whether or not you've trusted the project (unless you've disabled context loading entirely).</p>
+
+  <h2>2. How the prompt resolves</h2>
+  <p>On interactive startup, if a project has trust-requiring resources and there's no saved decision for that directory or a parent, Pi asks. Your answer can be remembered:</p>
+  <ul>
+    <li><code>/trust</code> in-app saves a decision to <code>~/.pi/agent/trust.json</code>, keyed by canonical directory — including an option to trust the immediate parent folder too. It doesn't reload the current session; restart to take effect.</li>
+    <li>The closest saved decision on the current or parent path wins over the global default.</li>
+    <li>If nothing applies, <code>defaultProjectTrust</code> (global-only setting) decides: <code>"ask"</code> (default), <code>"always"</code>, or <code>"never"</code>.</li>
+  </ul>
+  <p>Non-interactive modes (<code>-p</code>, <code>--mode json</code>, <code>--mode rpc</code>) never show a prompt — they fall straight to <code>defaultProjectTrust</code>, or you override per-run with <code>--approve</code>/<code>-a</code> or <code>--no-approve</code>/<code>-na</code>.</p>
+  <p>Trusting unlocks: loading <code>.pi/settings.json</code>, loading <code>.pi</code> resources (extensions, skills, prompts, themes, system prompt files), auto-installing missing project-configured packages, and running project-local extensions.</p>
+
+  <h2>3. What trust does <em>not</em> do</h2>
+  <p>This is the part to actually internalize:</p>
+  <blockquote>Project trust is only an input-loading guard. It prevents a repository from silently changing pi's settings or extensions before you approve it. It does not make untrusted code, untrusted prompts, or untrusted model output safe.</blockquote>
+  <p>Concretely:</p>
+  <ul>
+    <li><strong>No built-in sandbox, ever</strong> — trusted or not. Built-in tools read/write/edit files and run shell commands with your full user permissions, same as if you typed the commands yourself.</li>
+    <li><strong>Declining trust doesn't stop you from working</strong> — it just skips loading that repo's own extensions/skills/settings. The model can still read, write, edit, and run bash in that directory once you're chatting with it, using your global toolset.</li>
+    <li><strong>Prompt injection is an accepted, unsolved risk.</strong> Malicious instructions hidden in repo files, comments, docs, or build output are "expected local-agent risk" per the docs — trust doesn't filter this.</li>
+  </ul>
+  <p>So trust answers "should this repo be allowed to silently reconfigure my agent," not "is it safe to let the agent operate here."</p>
+
+  <h2>4. When you actually need isolation</h2>
+  <p>For repos you don't trust, generated/untrusted code you're not watching closely, or unattended automation, the answer is OS-level isolation — a container, VM, micro-VM, or policy-controlled sandbox — not a Pi setting. Patterns documented for this:</p>
+  <ul>
+    <li>Run the whole <code>pi</code> process inside a container/sandbox</li>
+    <li>Run host Pi but route built-in tool execution into a Gondolin micro-VM</li>
+    <li>Mount only the workspace paths the agent needs — read-only where you want a hard guarantee against unintended writes</li>
+    <li>Avoid mounting host <code>~/.pi/agent</code> unless the container should see host sessions/settings/credentials</li>
+    <li>Pass minimum-scope or short-lived API keys; restrict network access when the task doesn't need it</li>
+    <li>Review diffs/outputs before copying results back to trusted systems</li>
+  </ul>
+  <p>Full patterns are in <a href="https://pi.dev/docs/latest/containerization.md">Containerization</a> — worth a read before you first point Pi at, say, a cloned PR you haven't reviewed.</p>
+
+  <h2>5. Practical rule of thumb</h2>
+  <p>For your own repos, on your own machine, that you're actively watching — the default <code>"ask"</code> trust flow plus normal git hygiene (review diffs before committing/pushing) is the realistic bar, same as any other terminal agent with full tool access. Reach for containerization specifically when the work is unattended, the source is untrusted, or the credentials in scope are more sensitive than the task needs.</p>
+
+  <details class="recall">
+    <summary>Retrieval check — no peeking until you've tried</summary>
+    <p>Without scrolling up: if you decline project trust, does that stop Pi's <code>bash</code> tool from running shell commands in that directory?</p>
+    <div class="answer">
+      No. Declining trust only skips loading that project's own <code>.pi</code> settings/extensions/skills. The built-in tools (<code>bash</code> included) still run with your full user permissions regardless of the trust decision — there is no sandbox, trusted or not.
+    </div>
+  </details>
+
+  <div class="box box-source">
+    <span class="box-label">Primary source</span>
+    <a href="https://pi.dev/docs/latest/security.md">Security</a> and <a href="https://pi.dev/docs/latest/containerization.md">Containerization</a>.
+  </div>
+
+  <div class="box box-ask">
+    <span class="box-label">Stuck, or something behaved differently than expected?</span>
+    Ask your teacher (me) directly — describe what you ran and what happened. That's exactly the kind of detail that turns into the next lesson or a learning record.
+  </div>
+
+  <footer class="lesson-nav">
+    <span>See also: <a href="../reference/pi-essentials.html">Pi Essentials reference</a></span>
+    <span>Next: <a href="0005-skills.html">Lesson 0005 — Skills →</a></span>
+  </footer>
+</article>
+</body>
+</html>

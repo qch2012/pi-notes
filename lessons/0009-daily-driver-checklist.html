@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0009 — Daily-Driver Checklist</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<article class="page">
+  <div class="kicker">Lesson 0009 · Capstone</div>
+  <h1>Daily-driver checklist</h1>
+  <p class="lede">No new material — this is the mission's success criteria, restated as a checklist, with a pointer back to the lesson that covers each one. Use it to spot-check fluency before you fully cut over.</p>
+
+  <div class="box box-mission">
+    <span class="box-label">Why this lesson</span>
+    Your mission's success section is the definition of "done" for this workspace. This lesson closes the loop on it directly.
+  </div>
+
+  <h2>Checklist</h2>
+  <table>
+    <tr><th>Criterion</th><th>Covered in</th></tr>
+    <tr><td>Install, authenticate, run on a real project without docs</td><td><a href="0001-install-and-first-session.html">0001</a></td></tr>
+    <tr><td>Core interactive commands, session management, settings</td><td><a href="0002-session-management.html">0002</a>, <a href="0003-settings-and-keybindings.html">0003</a></td></tr>
+    <tr><td>Install/use Skills, Extensions, Prompt Templates, Packages; write a basic one</td><td><a href="0005-skills.html">0005</a>, <a href="0007-extensions.html">0007</a>, <a href="0006-prompt-templates.html">0006</a>, <a href="0008-packages.html">0008</a></td></tr>
+    <tr><td>Understands the trust/sandboxing model well enough to use safely</td><td><a href="0004-trust-and-sandboxing.html">0004</a></td></tr>
+    <tr><td>Knows where Pi's behavior diverges from Claude Code, so nothing surprises mid-task</td><td><a href="0001-install-and-first-session.html">0001</a> §5, <a href="0007-extensions.html">0007</a> §5</td></tr>
+  </table>
+
+  <h2>The six deltas, one more time</h2>
+  <p>Worth having memorized cold, since these are the ones most likely to bite mid-task if you're on autopilot from another agent:</p>
+  <ol>
+    <li><strong>No built-in MCP</strong> — bridge it via an extension, or find a package that already does.</li>
+    <li><strong>No sub-agents</strong> — <code>ctx.newSession()</code>/<code>ctx.fork()</code> from an extension if you need nested runs.</li>
+    <li><strong>No permission popups</strong> — <code>bash</code> and friends run without a per-call confirm. Add a <code>tool_call</code> extension if you want gating back.</li>
+    <li><strong>No plan mode</strong> — nothing stops the agent from just starting; if you want a plan-then-execute gate, that's a <code>before_agent_start</code> or custom-tool extension.</li>
+    <li><strong>No to-do/task tracking</strong> — same story, stateful custom tool.</li>
+    <li><strong>No background bash</strong> — a shell command runs in the foreground of the tool call; long-lived background process management needs a custom tool.</li>
+  </ol>
+  <p>None of these are gaps you're stuck with — they're defaults, and every one of them is addable in an afternoon or less as an extension, or possibly already exists as a package (0008). The design bet Pi is making is that most sessions don't need all six, so they shouldn't cost context and complexity by default.</p>
+
+  <h2>Quick self-test</h2>
+  <p>If you can do the following from memory, you're fluent enough to stop referring to these lessons for daily work:</p>
+  <ul>
+    <li>Start Pi in a project, switch models, and name the session</li>
+    <li>Go back to an earlier point in a conversation and try a different approach without losing the original path</li>
+    <li>Explain, without checking, what happens to your data if you decline project trust on a repo</li>
+    <li>Point Pi at an existing skill directory from another harness</li>
+    <li>Write and load a one-file extension that blocks a specific dangerous command</li>
+  </ul>
+  <p>If any of those feel shaky, that's a pointer to which numbered lesson to reread — not a reason to keep re-reading all of them front to back.</p>
+
+  <div class="box box-source">
+    <span class="box-label">Primary source</span>
+    Full docs index: <a href="https://pi.dev/docs/latest">pi.dev/docs/latest</a>.
+  </div>
+
+  <div class="box box-ask">
+    <span class="box-label">Stuck, or something behaved differently than expected?</span>
+    Ask your teacher (me) directly — describe what you ran and what happened. That's exactly the kind of detail that turns into a new lesson or a learning record, even past this checklist.
+  </div>
+
+  <footer class="lesson-nav">
+    <span>See also: <a href="../reference/pi-essentials.html">Pi Essentials reference</a></span>
+    <span>Back to <a href="0001-install-and-first-session.html">Lesson 0001</a> · <a href="../index.html">Index</a></span>
+  </footer>
+</article>
+</body>
+</html>

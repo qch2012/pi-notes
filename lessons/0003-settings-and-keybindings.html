@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0003 — Settings & Keybindings</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<article class="page">
+  <div class="kicker">Lesson 0003 · Core workflow</div>
+  <h1>Settings and keybindings</h1>
+  <p class="lede">Two plain JSON files control almost everything about how Pi behaves and feels: <code>settings.json</code> for behavior, <code>keybindings.json</code> for input. Both are editable by hand or through in-app commands, and both apply live with <code>/reload</code>.</p>
+
+  <div class="box box-mission">
+    <span class="box-label">Why this lesson</span>
+    Closes out the mission's "session management ... and settings" fluency target. This is also where a lot of daily-driver friction gets resolved — theme, tool defaults, model defaults, and how aggressively context gets compacted are all one JSON edit away.
+  </div>
+
+  <h2>1. Where settings live</h2>
+  <table>
+    <tr><th>File</th><th>Scope</th></tr>
+    <tr><td><code>~/.pi/agent/settings.json</code></td><td>Global — applies to all projects</td></tr>
+    <tr><td><code>.pi/settings.json</code></td><td>Project — overrides global, only loaded once the project is <strong>trusted</strong> (Lesson 0004)</td></tr>
+  </table>
+  <p>Project settings merge over global settings; nested objects merge key-by-key rather than replacing wholesale:</p>
+  <pre><code>// global
+{ "theme": "dark", "compaction": { "enabled": true, "reserveTokens": 16384 } }
+
+// project
+{ "compaction": { "reserveTokens": 8192 } }
+
+// effective result
+{ "theme": "dark", "compaction": { "enabled": true, "reserveTokens": 8192 } }</code></pre>
+  <p>Edit either file directly, or run <code>/settings</code> in-app for the common options. Some values save from their own UI instead: <code>/model</code> + Ctrl+S saves the startup model, <code>/thinking</code> + Ctrl+S saves the startup thinking level.</p>
+
+  <h2>2. Settings worth knowing about on day one</h2>
+  <table>
+    <tr><th>Setting</th><th>Default</th><th>Why it matters</th></tr>
+    <tr><td><code>defaultModel</code> / <code>defaultProvider</code></td><td>—</td><td>What loads at startup without <code>/model</code></td></tr>
+    <tr><td><code>defaultThinkingLevel</code></td><td>—</td><td><code>off</code> through <code>max</code>, per-model overrides via <code>modelThinkingLevels</code></td></tr>
+    <tr><td><code>theme</code></td><td><code>"dark"</code></td><td><code>"light"</code> or a custom theme name</td></tr>
+    <tr><td><code>defaultTools</code></td><td>Pi's standard set</td><td>Restrict/change the built-in toolset at startup: <code>read</code>, <code>bash</code>/<code>powershell</code>, <code>edit</code>, <code>write</code>, <code>grep</code>, <code>find</code>, <code>ls</code></td></tr>
+    <tr><td><code>defaultProjectTrust</code></td><td><code>"ask"</code></td><td>Fallback trust behavior — global setting only, see Lesson 0004</td></tr>
+    <tr><td><code>compaction.*</code></td><td>see Lesson 0002</td><td><code>enabled</code>, <code>reserveTokens</code>, <code>keepRecentTokens</code></td></tr>
+    <tr><td><code>enabledModels</code></td><td>—</td><td>Glob patterns for what Ctrl+P cycles through, e.g. <code>["claude-*", "gpt-4o"]</code></td></tr>
+    <tr><td><code>sessionDir</code></td><td>—</td><td>Redirect where session files are stored, e.g. into the project itself</td></tr>
+    <tr><td><code>externalEditor</code></td><td><code>$VISUAL</code>/<code>$EDITOR</code>/nano</td><td>What Ctrl+G opens — for VS Code, use <code>"code --wait"</code></td></tr>
+    <tr><td><code>doubleEscapeAction</code></td><td><code>"tree"</code></td><td>What double-Escape does: <code>"tree"</code>, <code>"fork"</code>, or <code>"none"</code></td></tr>
+  </table>
+  <p>Full reference (thinking budgets, terminal/image handling, retry/backoff, message delivery transport, markdown rendering, and the resource-loading arrays for extensions/skills/prompts/themes/packages) is in the primary source below — there's a lot more than fits here, and most of it you'll only touch once you hit a specific need.</p>
+
+  <h2>3. Resource-loading settings tie the whole system together</h2>
+  <p>These arrays are how you add things from outside Pi's default discovery locations — they're the settings you'll come back to in Lessons 0005–0008:</p>
+  <pre><code>{
+  "extensions": ["/path/to/local/extension.ts"],
+  "skills": ["~/.claude/skills"],
+  "prompts": ["/path/to/prompts"],
+  "packages": ["pi-skills", "npm:@org/my-extension"]
+}</code></pre>
+  <p>Notably: <code>"skills": ["~/.claude/skills"]</code> is how you point Pi at skills written for a different harness — no conversion needed.</p>
+
+  <h2>4. Keybindings — same shape, different file</h2>
+  <p><code>~/.pi/agent/keybindings.json</code> rebinds any action by its namespaced id. Format is <code>modifier+key</code>, modifiers combine (<code>ctrl</code>, <code>shift</code>, <code>alt</code>, <code>super</code>), and each action accepts a single key or an array:</p>
+  <pre><code>{
+  "tui.editor.historyPrevious": "ctrl+p",
+  "tui.editor.deleteWordBackward": ["ctrl+w", "alt+backspace"]
+}</code></pre>
+  <p>Discover ids with <code>/hotkeys</code> in-app, or check the full action tables in the primary source (editor movement/deletion, session commands, model/thinking cycling, tree navigation, fullscreen transcript scrolling). Ready-made Emacs and Vim binding sets are documented there too if you want a head start.</p>
+  <p>After editing either file, run <code>/reload</code> to apply changes without restarting the session — no need to quit and relaunch.</p>
+
+  <details class="recall">
+    <summary>Retrieval check — no peeking until you've tried</summary>
+    <p>Without scrolling up: which settings file wins when both global and project settings set the same nested key, and what command applies a settings-file edit without restarting?</p>
+    <div class="answer">
+      Project settings (<code>.pi/settings.json</code>) win over global, merged key-by-key for nested objects. Apply changes live with <code>/reload</code>.
+    </div>
+  </details>
+
+  <div class="box box-source">
+    <span class="box-label">Primary source</span>
+    <a href="https://pi.dev/docs/latest/settings.md">Settings</a> and <a href="https://pi.dev/docs/latest/keybindings.md">Keybindings</a>.
+  </div>
+
+  <div class="box box-ask">
+    <span class="box-label">Stuck, or something behaved differently than expected?</span>
+    Ask your teacher (me) directly — describe what you ran and what happened. That's exactly the kind of detail that turns into the next lesson or a learning record.
+  </div>
+
+  <footer class="lesson-nav">
+    <span>See also: <a href="../reference/pi-essentials.html">Pi Essentials reference</a></span>
+    <span>Next: <a href="0004-trust-and-sandboxing.html">Lesson 0004 — Trust & sandboxing model →</a></span>
+  </footer>
+</article>
+</body>
+</html>

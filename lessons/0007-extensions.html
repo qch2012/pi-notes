@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0007 — Extensions</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<article class="page">
+  <div class="kicker">Lesson 0007 · Customization</div>
+  <h1>Extensions: TypeScript modules that reshape Pi's behavior</h1>
+  <p class="lede">Extensions are the deep-customization layer — plain TypeScript, no build step, hot-reloadable. This is also where the six things Pi omits by default (Lesson 0001) come back, if you want them: permission gates, custom tools, MCP bridges, whatever else a full event-driven hook system can build.</p>
+
+  <div class="box box-mission">
+    <span class="box-label">Why this lesson</span>
+    Third of four customization lessons, and the one that closes the loop on "no permission popups by default" from Lesson 0001 — a confirm-before-<code>rm -rf</code> extension is the canonical first thing people write.
+  </div>
+
+  <h2>1. Minimal extension, end to end</h2>
+  <p><code>~/.pi/agent/extensions/my-extension.ts</code>:</p>
+  <pre><code>import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { Type } from "typebox";
+
+export default function (pi: ExtensionAPI) {
+  pi.on("session_start", async (_event, ctx) => {
+    ctx.ui.notify("Extension loaded!", "info");
+  });
+
+  pi.on("tool_call", async (event, ctx) => {
+    if (event.toolName === "bash" && event.input.command?.includes("rm -rf")) {
+      const ok = await ctx.ui.confirm("Dangerous!", "Allow rm -rf?");
+      if (!ok) return { block: true, reason: "Blocked by user" };
+    }
+  });
+
+  pi.registerTool({
+    name: "greet",
+    label: "Greet",
+    description: "Greet someone by name",
+    parameters: Type.Object({ name: Type.String({ description: "Name to greet" }) }),
+    async execute(toolCallId, params, signal, onUpdate, ctx) {
+      return { content: [{ type: "text", text: `Hello, ${params.name}!` }], details: {} };
+    },
+  });
+
+  pi.registerCommand("hello", {
+    description: "Say hello",
+    handler: async (args, ctx) => {
+      ctx.ui.notify(`Hello ${args || "world"}!`, "info");
+    },
+  });
+}</code></pre>
+  <p>No compile step — extensions load via <a href="https://github.com/unjs/jiti">jiti</a>, so TypeScript runs directly. Test a work-in-progress file without installing it anywhere permanent:</p>
+  <pre><code>pi -e ./my-extension.ts</code></pre>
+  <p>That single file already demonstrates the four building blocks: <strong>events</strong> (<code>pi.on</code>), <strong>custom tools</strong> (<code>pi.registerTool</code>), <strong>custom commands</strong> (<code>pi.registerCommand</code>), and <strong>user interaction</strong> (<code>ctx.ui</code>).</p>
+
+  <h2>2. Where extensions live</h2>
+  <table>
+    <tr><th>Location</th><th>Scope</th></tr>
+    <tr><td><code>~/.pi/agent/extensions/*.ts</code></td><td>Global, single file</td></tr>
+    <tr><td><code>~/.pi/agent/extensions/*/index.ts</code></td><td>Global, subdirectory (multi-file)</td></tr>
+    <tr><td><code>.pi/extensions/*.ts</code>, <code>.pi/extensions/*/index.ts</code></td><td>Project-local — only after trust</td></tr>
+    <tr><td><code>settings.json</code> <code>extensions</code> array</td><td>Any files or directories</td></tr>
+  </table>
+  <p>Files/directories placed in the auto-discovered locations support <code>/reload</code> hot-reloading. <code>pi -e ./path.ts</code> is for quick one-off testing, not permanent placement.</p>
+  <p>Three growth stages, same as any small tool: single file → directory with <code>index.ts</code> and helper modules → full package with its own <code>package.json</code> and npm dependencies (run <code>npm install</code> in the extension directory, then <code>node_modules/</code> imports resolve automatically).</p>
+
+  <h2>3. The event model, at a glance</h2>
+  <p>Pi's lifecycle fires a long, well-defined sequence of events — session start, per-turn agent events, per-tool-call events, compaction, tree navigation, model switches. The two you'll reach for most:</p>
+  <ul>
+    <li><strong><code>tool_call</code></strong> — fires before a tool executes. <code>event.input</code> is mutable (patch arguments in place), and returning <code>{ block: true, reason }</code> stops the call. This is exactly how you'd rebuild a permission-popup layer.</li>
+    <li><strong><code>tool_result</code></strong> — fires after execution, before the result is finalized. Handlers chain like middleware and can modify <code>content</code>/<code>details</code>/<code>isError</code>.</li>
+  </ul>
+  <p>Full event catalogue — <code>project_trust</code>, <code>resources_discover</code>, <code>session_before_compact</code>/<code>session_before_tree</code> (which is how you'd customize compaction or branch summaries from Lesson 0002), <code>before_agent_start</code> (inject messages or rewrite the system prompt), <code>context</code> (mutate outgoing messages), <code>input</code> (intercept raw user input before skill/template expansion) — is in the primary source. Read the lifecycle diagram there once; it clarifies ordering questions no amount of prose will.</p>
+
+  <h2>4. <code>ctx.ui</code> — the interaction surface</h2>
+  <pre><code>await ctx.ui.confirm("Title", "Are you sure?");   // yes/no dialog
+await ctx.ui.select("Pick one:", [...]);           // list picker
+await ctx.ui.input("Prompt:");                     // free text
+ctx.ui.notify("Done!", "info");                    // toast
+ctx.ui.setStatus("my-ext", "Processing...");        // footer status
+ctx.ui.setWidget("my-ext", ["Line 1", "Line 2"]);   // persistent widget above editor</code></pre>
+  <p>Guard dialog methods with <code>ctx.hasUI</code> (false in print mode <code>-p</code> and JSON mode) — fire-and-forget methods like <code>notify</code> work in TUI and RPC but are no-ops where there's no UI to show them in.</p>
+
+  <h2>5. Restoring what Lesson 0001 said Pi omits</h2>
+  <p>All six defaults-you-don't-get are extension territory:</p>
+  <table>
+    <tr><th>Omitted default</th><th>Extension mechanism</th></tr>
+    <tr><td>Permission popups</td><td><code>tool_call</code> + <code>ctx.ui.confirm()</code>, exactly like the <code>rm -rf</code> example above</td></tr>
+    <tr><td>To-do / task tracking</td><td>Stateful custom tool via <code>pi.registerTool()</code> plus <code>pi.appendEntry()</code> for persistence across restarts</td></tr>
+    <tr><td>Background bash</td><td>Custom tool that manages a long-lived child process, surfaced via <code>ctx.ui.setStatus()</code>/<code>setWidget()</code></td></tr>
+    <tr><td>MCP</td><td>An extension that bridges MCP server tools into <code>pi.registerTool()</code> calls at startup</td></tr>
+    <tr><td>Sub-agents</td><td><code>ctx.newSession()</code>/<code>ctx.fork()</code> plus a custom tool that drives a nested agent run and returns its result</td></tr>
+    <tr><td>Plan mode</td><td><code>before_agent_start</code> to inject planning instructions, or a custom tool that gates execution behind an approved plan</td></tr>
+  </table>
+  <p>Don't build these from scratch on day one — check the package gallery (next lesson) first, since some of these are common enough to already exist as installable packages.</p>
+
+  <h2>6. Security note</h2>
+  <p>Extensions run with your full system permissions and can execute arbitrary code — same trust bar as running an unfamiliar shell script. Only install from sources you trust, and read third-party extension source before enabling it, especially anything from outside the auto-discovered project-local paths (which at least gate behind project trust, Lesson 0004).</p>
+
+  <details class="recall">
+    <summary>Retrieval check — no peeking until you've tried</summary>
+    <p>Without scrolling up: which event lets you block a tool call before it runs, and what does the handler return to block it?</p>
+    <div class="answer">
+      <code>tool_call</code>. Return <code>{ block: true, reason: "..." }</code> (optionally <code>terminate: true</code> to stop the agent run early).
+    </div>
+  </details>
+
+  <div class="box box-source">
+    <span class="box-label">Primary source</span>
+    <a href="https://pi.dev/docs/latest/extensions.md">Extensions</a> — see also <code>examples/extensions/</code> in the Pi install for working implementations (permission gates, custom compaction, custom UI, etc.).
+  </div>
+
+  <div class="box box-ask">
+    <span class="box-label">Stuck, or something behaved differently than expected?</span>
+    Ask your teacher (me) directly — describe what you ran and what happened. That's exactly the kind of detail that turns into the next lesson or a learning record.
+  </div>
+
+  <footer class="lesson-nav">
+    <span>See also: <a href="../reference/pi-essentials.html">Pi Essentials reference</a></span>
+    <span>Next: <a href="0008-packages.html">Lesson 0008 — Packages →</a></span>
+  </footer>
+</article>
+</body>
+</html>

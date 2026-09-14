@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0008 — Packages</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<article class="page">
+  <div class="kicker">Lesson 0008 · Customization</div>
+  <h1>Packages: installing bundles of extensions, skills, prompts, and themes</h1>
+  <p class="lede">A Pi package is just npm or git carrying one or more of the three resource types from the last three lessons (plus themes). This lesson is about <em>consuming</em> packages — publishing your own is out of scope for now, per the mission.</p>
+
+  <div class="box box-mission">
+    <span class="box-label">Why this lesson</span>
+    Last of four customization lessons. This is how the "restoring omitted defaults" table from Lesson 0007 becomes a one-line install instead of an afternoon of writing extensions yourself.
+  </div>
+
+  <h2>1. Install / manage commands</h2>
+  <pre><code>pi install npm:@foo/bar@1.0.0
+pi install git:github.com/user/repo@v1
+pi install https://github.com/user/repo      # raw URLs also work
+pi install /absolute/path/to/package
+pi install ./relative/path/to/package
+
+pi remove npm:@foo/bar
+pi list                     # installed packages from settings
+pi update                   # update pi itself
+pi update --all             # update pi, packages, and reconcile pinned git refs
+pi update npm:@foo/bar      # update just one package</code></pre>
+  <p>By default, <code>install</code>/<code>remove</code> write to <strong>global</strong> settings (<code>~/.pi/agent/settings.json</code>). Add <code>-l</code> to write to <strong>project</strong> settings instead (<code>.pi/settings.json</code>) — useful for team-shared config, since Pi auto-installs any missing project-configured packages on startup once the project is trusted.</p>
+  <p>To try before installing, run ephemeral for one session:</p>
+  <pre><code>pi -e npm:@foo/bar
+pi -e git:github.com/user/repo</code></pre>
+
+  <h2>2. Source types</h2>
+  <table>
+    <tr><th>Source</th><th>Format</th><th>Installs to</th></tr>
+    <tr><td>npm</td><td><code>npm:@scope/pkg@1.2.3</code> or <code>npm:pkg</code></td><td><code>~/.pi/agent/npm/</code> (global) or <code>.pi/npm/</code> (project)</td></tr>
+    <tr><td>git</td><td><code>git:github.com/user/repo@v1</code>, SSH forms, or raw <code>https://</code>/<code>ssh://</code> URLs</td><td><code>~/.pi/agent/git/&lt;host&gt;/&lt;path&gt;</code> or <code>.pi/git/...</code></td></tr>
+    <tr><td>local</td><td><code>/absolute/path</code> or <code>./relative/path</code></td><td>Referenced in place, not copied</td></tr>
+  </table>
+  <p>Versioned npm specs and git refs are <strong>pinned</strong> — <code>pi update --extensions</code>/<code>--all</code> won't silently move you to a newer version. To bump a pinned git ref deliberately: <code>pi install git:host/user/repo@new-ref</code>.</p>
+
+  <h2>3. Filtering what a package loads</h2>
+  <p>Object form in settings narrows a package down to specific resources:</p>
+  <pre><code>{
+  "packages": [
+    "npm:simple-pkg",
+    {
+      "source": "npm:my-package",
+      "extensions": ["extensions/*.ts", "!extensions/legacy.ts"],
+      "skills": [],
+      "prompts": ["prompts/review.md"]
+    }
+  ]
+}</code></pre>
+  <p>Omit a key to load all of that type; <code>[]</code> loads none; <code>!pattern</code> excludes; <code>+path</code>/<code>-path</code> force-include/exclude an exact path.</p>
+
+  <h2>4. Enabling/disabling installed resources interactively</h2>
+  <pre><code>pi config       # toggle resources from installed packages/local dirs; Tab switches global/project
+pi config -l    # start in project overrides, with inherited global resources dimmed</code></pre>
+
+  <h2>5. Security note (same bar as extensions)</h2>
+  <blockquote>Pi packages run with full system access. Extensions execute arbitrary code, and skills can instruct the model to perform any action including running executables. Review source code before installing third-party packages.</blockquote>
+  <p>Treat <code>pi install</code> like <code>npm install</code> from an unfamiliar registry — check what you're pulling in before it runs.</p>
+
+  <h2>6. Finding packages</h2>
+  <p>The <a href="https://pi.dev/packages">package gallery</a> lists community packages tagged <code>pi-package</code>. Check there before hand-rolling an extension for something common — bridging in MCP, restoring a to-do tool, permission gating — since it's likely already packaged.</p>
+
+  <details class="recall">
+    <summary>Retrieval check — no peeking until you've tried</summary>
+    <p>Without scrolling up: by default, does <code>pi install</code> write to global or project settings, and what flag changes that?</p>
+    <div class="answer">
+      Global (<code>~/.pi/agent/settings.json</code>) by default. Add <code>-l</code> to write to project settings (<code>.pi/settings.json</code>) instead.
+    </div>
+  </details>
+
+  <div class="box box-source">
+    <span class="box-label">Primary source</span>
+    <a href="https://pi.dev/docs/latest/packages.md">Pi Packages</a> and the <a href="https://pi.dev/packages">package gallery</a>.
+  </div>
+
+  <div class="box box-ask">
+    <span class="box-label">Stuck, or something behaved differently than expected?</span>
+    Ask your teacher (me) directly — describe what you ran and what happened. That's exactly the kind of detail that turns into the next lesson or a learning record.
+  </div>
+
+  <footer class="lesson-nav">
+    <span>See also: <a href="../reference/pi-essentials.html">Pi Essentials reference</a></span>
+    <span>Next: <a href="0009-daily-driver-checklist.html">Lesson 0009 — Daily-driver checklist (capstone) →</a></span>
+  </footer>
+</article>
+</body>
+</html>
