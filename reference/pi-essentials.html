@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pi Essentials — Reference</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<article class="page">
+  <div class="kicker">Reference · Quick lookup</div>
+  <h1>Pi Essentials</h1>
+  <p class="lede">Compressed reference for daily use. Print or keep open in a tab. Full detail: <a href="https://pi.dev/docs/latest">pi.dev/docs/latest</a>.</p>
+
+  <h2>Install / uninstall</h2>
+  <pre><code>npm install -g --ignore-scripts @earendil-works/pi-coding-agent</code></pre>
+  <p><code>--ignore-scripts</code> skips dependency lifecycle scripts — not needed for normal operation.</p>
+  <table>
+    <tr><th>Manager</th><th>Uninstall</th></tr>
+    <tr><td>npm</td><td><code>npm uninstall -g @earendil-works/pi-coding-agent</code></td></tr>
+    <tr><td>pnpm</td><td><code>pnpm remove -g @earendil-works/pi-coding-agent</code></td></tr>
+    <tr><td>Yarn</td><td><code>yarn global remove @earendil-works/pi-coding-agent</code></td></tr>
+    <tr><td>Bun</td><td><code>bun uninstall -g @earendil-works/pi-coding-agent</code></td></tr>
+  </table>
+  <p>Settings and credentials persist in <code>~/.pi/agent/</code> across uninstall.</p>
+
+  <h2>Auth</h2>
+  <ul>
+    <li><code>/login</code> inside Pi — subscription (Claude Pro/Max, ChatGPT Plus/Pro, GitHub Copilot) or to store an API key persistently in <code>~/.pi/agent/auth.json</code></li>
+    <li>Env var before launch: <code>export ANTHROPIC_API_KEY=sk-ant-...</code></li>
+  </ul>
+
+  <h2>Default toolset</h2>
+  <p>Unlike agents with a large built-in tool surface, Pi ships exactly four tools by default:</p>
+  <table>
+    <tr><th>Tool</th><th>Does</th></tr>
+    <tr><td><code>read</code></td><td>Read files</td></tr>
+    <tr><td><code>write</code></td><td>Create or overwrite files</td></tr>
+    <tr><td><code>edit</code></td><td>Patch files</td></tr>
+    <tr><td><code>bash</code></td><td>Run shell commands</td></tr>
+  </table>
+  <p>Everything else — web search, MCP servers, structured task tracking — is added via extensions, not baked in.</p>
+
+  <h2>What Pi omits by default</h2>
+  <p>Deliberately excluded from core, implementable as extensions/packages if wanted:</p>
+  <ul>
+    <li>Built-in MCP client</li>
+    <li>Sub-agents</li>
+    <li>Permission popups (bash runs without a per-call confirmation prompt)</li>
+    <li>Plan mode</li>
+    <li>To-do / task tracking</li>
+    <li>Background bash</li>
+  </ul>
+
+  <h2>Context files</h2>
+  <p>Pi auto-loads, from global settings, parent directories, and cwd: <code>AGENTS.md</code>, <code>CLAUDE.md</code>, <code>AGENTS.override.md</code>.</p>
+
+  <h2>Slash commands</h2>
+  <table>
+    <tr><th>Command</th><th>Function</th></tr>
+    <tr><td><code>/login</code>, <code>/logout</code></td><td>Manage OAuth or API-key credentials</td></tr>
+    <tr><td><code>/model</code></td><td>Switch active model (Ctrl+S saves default)</td></tr>
+    <tr><td><code>/thinking</code></td><td>Switch thinking level (Ctrl+S saves startup default)</td></tr>
+    <tr><td><code>/scoped-models</code></td><td>Enable/disable models for Ctrl+P cycling</td></tr>
+    <tr><td><code>/settings</code></td><td>Theme, delivery, transport, other prefs</td></tr>
+    <tr><td><code>/resume</code></td><td>Pick from previous sessions</td></tr>
+    <tr><td><code>/new</code></td><td>Start a new session</td></tr>
+    <tr><td><code>/name &lt;name&gt;</code></td><td>Set session display name</td></tr>
+    <tr><td><code>/session</code></td><td>Show session file, ID, messages, tokens, cost</td></tr>
+    <tr><td><code>/tree</code></td><td>Jump to any point in the session, continue from there</td></tr>
+    <tr><td><code>/trust</code></td><td>Save project trust decision for future sessions</td></tr>
+    <tr><td><code>/fork</code></td><td>New session from a previous user message</td></tr>
+    <tr><td><code>/clone</code></td><td>Duplicate current active branch into a new session</td></tr>
+    <tr><td><code>/compact [prompt]</code></td><td>Manually compact context, optional custom instructions</td></tr>
+    <tr><td><code>/copy</code></td><td>Copy last assistant message to clipboard</td></tr>
+    <tr><td><code>/export [file]</code></td><td>Export session to HTML or JSONL</td></tr>
+    <tr><td><code>/import &lt;file&gt;</code></td><td>Import and resume a session from JSONL</td></tr>
+    <tr><td><code>/share</code></td><td>Upload as private GitHub gist, shareable HTML link</td></tr>
+    <tr><td><code>/reload</code></td><td>Reload keybindings, extensions, skills, prompts, themes, context files</td></tr>
+    <tr><td><code>/hotkeys</code></td><td>Show all keyboard shortcuts</td></tr>
+    <tr><td><code>/llama</code></td><td>Download/load/unload llama.cpp router models</td></tr>
+    <tr><td><code>/changelog</code></td><td>Version history</td></tr>
+    <tr><td><code>/quit</code></td><td>Quit</td></tr>
+  </table>
+
+  <div class="box box-source">
+    <span class="box-label">Sources</span>
+    <a href="https://pi.dev/docs/latest/quickstart.md">Quickstart</a> ·
+    <a href="https://pi.dev/docs/latest/usage.md">Using Pi</a>
+  </div>
+
+  <footer class="lesson-nav">
+    <span>Pi teaching workspace</span>
+    <span><a href="../lessons/0001-install-and-first-session.html">Lesson 0001 →</a></span>
+  </footer>
+</article>
+</body>
+</html>

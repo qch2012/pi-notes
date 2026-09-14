@@ -1,0 +1,199 @@
+/* Shared stylesheet for the Pi teaching workspace: lessons/*.html and reference/*.html */
+
+:root {
+  --ink: #1a1a1a;
+  --ink-soft: #4a4a4a;
+  --paper: #fbfaf7;
+  --paper-raised: #f2f0ea;
+  --rule: #ddd8cc;
+  --accent: #a6401f;
+  --accent-soft: #c9d6c4;
+  --code-bg: #f0efe9;
+  --code-ink: #2c2c2c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #e8e4d8;
+    --ink-soft: #b8b3a3;
+    --paper: #1c1b18;
+    --paper-raised: #242320;
+    --rule: #3a382f;
+    --accent: #e0784a;
+    --accent-soft: #3a4536;
+    --code-bg: #242320;
+    --code-ink: #e8e4d8;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  font-size: 19px;
+  line-height: 1.55;
+}
+
+.page {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 5rem;
+}
+
+.kicker {
+  font-family: -apple-system, "Segoe UI", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+h1 {
+  font-size: 2rem;
+  line-height: 1.2;
+  margin: 0 0 0.3em;
+}
+
+h2 {
+  font-size: 1.25rem;
+  margin: 2.2em 0 0.6em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--rule);
+}
+
+h3 {
+  font-size: 1.05rem;
+  margin: 1.6em 0 0.5em;
+}
+
+p { margin: 0.9em 0; }
+
+.lede {
+  font-size: 1.08rem;
+  color: var(--ink-soft);
+  margin-top: 0;
+}
+
+a { color: var(--accent); text-decoration-thickness: 1px; }
+a:hover { text-decoration-thickness: 2px; }
+
+code, pre {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.85em;
+  background: var(--code-bg);
+  color: var(--code-ink);
+  border-radius: 4px;
+}
+
+code { padding: 0.15em 0.35em; }
+
+pre {
+  padding: 0.9em 1em;
+  overflow-x: auto;
+  line-height: 1.5;
+  border-left: 3px solid var(--accent);
+}
+pre code { padding: 0; background: none; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  margin: 1em 0;
+}
+th, td {
+  text-align: left;
+  padding: 0.45em 0.6em;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+th {
+  font-family: -apple-system, "Segoe UI", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* Callout boxes */
+.box {
+  border-radius: 8px;
+  padding: 1em 1.2em;
+  margin: 1.4em 0;
+  font-size: 0.95rem;
+}
+
+.box-mission {
+  background: var(--paper-raised);
+  border-left: 3px solid var(--accent);
+}
+.box-mission .box-label { color: var(--accent); }
+
+.box-source {
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+}
+
+.box-ask {
+  background: var(--paper-raised);
+  border-left: 3px solid var(--ink-soft);
+}
+
+.box-label {
+  font-family: -apple-system, "Segoe UI", sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 0.4em;
+}
+
+/* Retrieval / quiz widgets */
+.recall {
+  background: var(--paper-raised);
+  border: 1px dashed var(--rule);
+  border-radius: 8px;
+  padding: 1em 1.2em;
+  margin: 1.4em 0;
+}
+.recall summary {
+  cursor: pointer;
+  font-family: -apple-system, "Segoe UI", sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.recall[open] summary { margin-bottom: 0.6em; }
+.recall .answer {
+  padding-top: 0.6em;
+  border-top: 1px solid var(--rule);
+}
+
+footer.lesson-nav {
+  margin-top: 3.5rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--rule);
+  font-family: -apple-system, "Segoe UI", sans-serif;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.citation {
+  font-size: 0.8em;
+  color: var(--ink-soft);
+  vertical-align: super;
+}
+
+ul, ol { padding-left: 1.3em; }
+li { margin: 0.35em 0; }

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0001 — Install & First Session</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<article class="page">
+  <div class="kicker">Lesson 0001 · Getting started</div>
+  <h1>Install Pi, authenticate, run a first session</h1>
+  <p class="lede">You already know the shape of a terminal coding agent. This lesson is just Pi's specific commands, plus the handful of places it deliberately does less than what you're used to.</p>
+
+  <div class="box box-mission">
+    <span class="box-label">Why this lesson</span>
+    Your mission is to daily-drive Pi. Step one is mechanical: get it installed, authenticated, and running on a real project — and know, going in, the four defaults it ships with and the six things it leaves out.
+  </div>
+
+  <h2>1. Install</h2>
+  <p>Pi ships on npm as a global package:</p>
+  <pre><code>npm install -g --ignore-scripts @earendil-works/pi-coding-agent</code></pre>
+  <p><code>--ignore-scripts</code> just skips dependency lifecycle scripts — they're not needed for normal operation. Uninstalling later (any package manager) keeps your settings and credentials in <code>~/.pi/agent/</code>, so reinstalling doesn't mean re-authenticating.</p>
+
+  <h2>2. Authenticate</h2>
+  <p>Two paths, pick whichever matches how you already pay for a model:</p>
+  <ul>
+    <li><strong>Subscription</strong> — run <code>/login</code> inside Pi once it's running. Works with Claude Pro/Max, ChatGPT Plus/Pro, or GitHub Copilot.</li>
+    <li><strong>API key</strong> — <code>export ANTHROPIC_API_KEY=sk-ant-...</code> before launch, or run <code>/login</code> to store a key persistently in <code>~/.pi/agent/auth.json</code>.</li>
+  </ul>
+
+  <h2>3. Launch, in a real project</h2>
+  <pre><code>cd /path/to/project
+pi</code></pre>
+  <p>That's it — no separate init step. Once it's up, give it something real rather than a toy prompt, e.g. <em>"Summarize this repository and tell me how to run its checks."</em></p>
+
+  <h2>4. The default toolset is smaller than you're used to</h2>
+  <p>Pi gives the model exactly four tools out of the box:</p>
+  <table>
+    <tr><th>Tool</th><th>Does</th></tr>
+    <tr><td><code>read</code></td><td>Read files</td></tr>
+    <tr><td><code>write</code></td><td>Create or overwrite files</td></tr>
+    <tr><td><code>edit</code></td><td>Patch files</td></tr>
+    <tr><td><code>bash</code></td><td>Run shell commands</td></tr>
+  </table>
+  <p>No built-in web search, no built-in MCP client — those exist as extensions/packages you opt into, not defaults you opt out of.</p>
+
+  <h2>5. Six things Pi intentionally doesn't do by default</h2>
+  <p>This is the part most likely to trip you up coming from a heavier daily driver. Pi's docs state this explicitly as a design choice, not a gap:</p>
+  <ul>
+    <li><strong>No built-in MCP</strong></li>
+    <li><strong>No sub-agents</strong></li>
+    <li><strong>No permission popups</strong> — <code>bash</code> runs without a per-call confirmation prompt</li>
+    <li><strong>No plan mode</strong></li>
+    <li><strong>No to-do / task tracking</strong></li>
+    <li><strong>No background bash</strong></li>
+  </ul>
+  <p>All six are addable as extensions if you end up wanting them back — that's a later lesson, once Skills/Extensions are in your zone of proximal development.</p>
+
+  <h2>6. Good news: your context files already work</h2>
+  <p>Pi auto-loads <code>AGENTS.md</code>, <code>CLAUDE.md</code>, or <code>AGENTS.override.md</code> from global settings, parent directories, and the current working directory. Whatever project conventions you've already written for other agents, Pi reads on day one.</p>
+
+  <details class="recall">
+    <summary>Retrieval check — no peeking until you've tried</summary>
+    <p>Without scrolling up: name Pi's four default tools, then name three of the six things it omits by default.</p>
+    <div class="answer">
+      Tools: <code>read</code>, <code>write</code>, <code>edit</code>, <code>bash</code>.<br>
+      Omitted (any three): MCP, sub-agents, permission popups, plan mode, to-dos, background bash.
+    </div>
+  </details>
+
+  <div class="box box-source">
+    <span class="box-label">Primary source</span>
+    Read this in full before your next session: <a href="https://pi.dev/docs/latest/quickstart.md">Pi Quickstart</a> (and <a href="https://pi.dev/docs/latest/usage.md">Using Pi</a> for the complete slash-command reference).
+  </div>
+
+  <div class="box box-ask">
+    <span class="box-label">Stuck, or something behaved differently than expected?</span>
+    Ask your teacher (me) directly — describe what you ran and what happened. That's exactly the kind of detail that turns into the next lesson or a learning record.
+  </div>
+
+  <footer class="lesson-nav">
+    <span>See also: <a href="../reference/pi-essentials.html">Pi Essentials reference</a></span>
+    <span>Next: install it for real, then come back and tell me how it went →</span>
+  </footer>
+</article>
+</body>
+</html>
