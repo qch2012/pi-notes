@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0002 — Session Management</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<article class="page">
+  <div class="kicker">Lesson 0002 · Core workflow</div>
+  <h1>Session management: branching, forking, cloning, compaction</h1>
+  <p class="lede">This is the biggest structural delta from a linear-history agent. Pi sessions are trees, not a single scrollback — and three different commands let you branch off in three different ways, for three different reasons.</p>
+
+  <div class="box box-mission">
+    <span class="box-label">Why this lesson</span>
+    Your mission calls out "session management (branching, <code>/tree</code>, <code>/fork</code>, <code>/clone</code>, compaction)" by name as a fluency target. It's also the thing most likely to feel unfamiliar day one, since most terminal agents you've used treat a session as one linear thread.
+  </div>
+
+  <h2>1. The core idea: sessions are trees</h2>
+  <p>Every message in a session has an <code>id</code> and a <code>parentId</code>. Your current position is the "active leaf." Nothing is ever overwritten — going back to an earlier point and trying something different just grows a new branch off that point, alongside the one you left.</p>
+  <pre><code>├─ user: "Hello, can you help..."
+│  └─ assistant: "Of course! I can..."
+│     ├─ user: "Let's try approach A..."
+│     │  └─ assistant: "For approach A..."
+│     │     └─ user: "That worked..."  ← active
+│     └─ user: "Actually, approach B..."
+│        └─ assistant: "For approach B..."</code></pre>
+  <p>Both "approach A" and "approach B" still exist in the same file. That persistence is what the next three commands each give you a different way to use.</p>
+
+  <h2>2. <code>/tree</code>, <code>/fork</code>, <code>/clone</code> — same tree, three different moves</h2>
+  <p>All three let you jump to an earlier point in a conversation. The difference is what happens to the file:</p>
+  <table>
+    <tr><th>Feature</th><th><code>/tree</code></th><th><code>/fork</code></th><th><code>/clone</code></th></tr>
+    <tr><td>Output</td><td>Same session file</td><td>New session file</td><td>New session file</td></tr>
+    <tr><td>What you pick from</td><td>Full tree</td><td>A previous user message</td><td>Current active branch (whole)</td></tr>
+    <tr><td>Typical use</td><td>Explore alternatives in place</td><td>Start a fresh session from an earlier prompt</td><td>Duplicate current work before continuing</td></tr>
+    <tr><td>Branch summary offered?</td><td>Yes, optional</td><td>No</td><td>No</td></tr>
+  </table>
+  <p><strong>Rule of thumb:</strong> staying in one file and keeping alternatives visible side by side → <code>/tree</code>. Wanting a clean, separate session file → <code>/fork</code> or <code>/clone</code>.</p>
+
+  <h3><code>/tree</code> in practice</h3>
+  <p>Opens an interactive tree view. Selecting a <strong>user message</strong> moves the leaf to that message's parent, drops the message text into your editor so you can edit and resubmit — that's how a new branch gets created. Selecting an <strong>assistant/tool/other</strong> entry just moves the leaf there with an empty editor, so you continue from that point unchanged.</p>
+  <table>
+    <tr><th>Key</th><th>Action</th></tr>
+    <tr><td>↑/↓</td><td>Navigate visible entries</td></tr>
+    <tr><td>←/→</td><td>Page up/down</td></tr>
+    <tr><td>Ctrl+←/→ or Alt+←/→</td><td>Fold/unfold, jump between branch segments</td></tr>
+    <tr><td>Shift+L</td><td>Set or clear a label on the selected entry</td></tr>
+    <tr><td>Shift+T</td><td>Toggle label timestamps</td></tr>
+    <tr><td>Enter</td><td>Select entry</td></tr>
+    <tr><td>Ctrl+O</td><td>Cycle filter mode (default / no-tools / user-only / labeled-only / all)</td></tr>
+  </table>
+
+  <h3>Branch summaries</h3>
+  <p>When <code>/tree</code> moves you away from a branch, Pi offers to summarize the branch you're abandoning and attach that summary at your new position — so context from the path you left isn't just silently lost. You choose: no summary, default-prompt summary, or a custom-focus summary.</p>
+
+  <h2>3. Naming, finding, and inspecting sessions</h2>
+  <table>
+    <tr><th>Command</th><th>Function</th></tr>
+    <tr><td><code>/name &lt;name&gt;</code></td><td>Set a human-readable name for the current session</td></tr>
+    <tr><td><code>/session</code></td><td>Show session file path, session ID, message count, tokens, cost</td></tr>
+    <tr><td><code>/resume</code></td><td>Interactive picker for past sessions in this project</td></tr>
+    <tr><td><code>/new</code></td><td>Start a fresh session</td></tr>
+  </table>
+  <p>Startup flags do the same jobs without entering the UI first:</p>
+  <pre><code>pi -c                    # continue most recent session
+pi -r                    # browse and select from past sessions
+pi --no-session          # ephemeral, nothing saved
+pi --name "my task"      # set display name at startup
+pi --session &lt;path|id&gt;   # resume a specific session
+pi --fork &lt;path|id&gt;      # fork a specific session into a new one</code></pre>
+  <p>In the <code>/resume</code> picker: type to search, Ctrl+P toggles path display, Ctrl+S toggles sort mode, Ctrl+N filters to named sessions, Ctrl+R renames, Ctrl+D deletes (with confirmation — uses the <code>trash</code> CLI when available, so it's usually recoverable).</p>
+  <p>Named sessions are dramatically easier to pick out of that list later — get in the habit of <code>/name</code> or <code>--name</code> on anything you'll want to find again.</p>
+
+  <h2>4. Compaction — keeping long sessions usable</h2>
+  <p>Context windows are finite. Pi handles that two ways:</p>
+  <ul>
+    <li><strong>Auto-compaction</strong> — fires automatically once context exceeds <code>contextWindow − reserveTokens</code> (reserve defaults to 16,384 tokens). Pi walks backwards from the newest message, keeps the most recent ~20,000 tokens (<code>keepRecentTokens</code>, configurable) verbatim, and summarizes everything older into a structured summary block appended to the session.</li>
+    <li><strong>Manual compaction</strong> — <code>/compact [instructions]</code>. Same mechanism, triggered on demand. The optional instructions steer what the summary focuses on, e.g. <code>/compact focus on the API contract decisions, drop exploratory dead ends</code>.</li>
+  </ul>
+  <p>Nothing is deleted — the raw messages stay in the session file, they're just excluded from what gets sent to the model going forward. The summary follows a fixed structure (Goal / Constraints / Progress / Key Decisions / Next Steps / Critical Context, plus lists of read and modified files), which is why compacted context tends to stay usably specific rather than degrading into vague recap.</p>
+  <p>Configure it in <code>~/.pi/agent/settings.json</code> or <code>&lt;project&gt;/.pi/settings.json</code>:</p>
+  <pre><code>{
+  "compaction": {
+    "enabled": true,
+    "reserveTokens": 16384,
+    "keepRecentTokens": 20000
+  }
+}</code></pre>
+  <p>Set <code>enabled: false</code> to turn off auto-compaction entirely — you can still run <code>/compact</code> by hand.</p>
+
+  <h2>5. Moving sessions around</h2>
+  <table>
+    <tr><th>Command</th><th>Function</th></tr>
+    <tr><td><code>/export [file]</code></td><td>Export session to HTML (readable transcript) or JSONL (raw, re-importable)</td></tr>
+    <tr><td><code>/import &lt;file&gt;</code></td><td>Import and resume a session from a JSONL export</td></tr>
+    <tr><td><code>/share</code></td><td>Upload as a <strong>private</strong> GitHub gist, gives you a shareable HTML link</td></tr>
+  </table>
+  <p>Note the asymmetry: <code>/export</code> to JSONL round-trips (you can <code>/import</code> it back and keep working), but the HTML export and <code>/share</code> link are read-only transcripts for showing someone else what happened — not something you resume from.</p>
+
+  <details class="recall">
+    <summary>Retrieval check — no peeking until you've tried</summary>
+    <p>Without scrolling up: which of <code>/tree</code>, <code>/fork</code>, <code>/clone</code> creates a new session file, and which one offers to summarize the branch you're leaving?</p>
+    <div class="answer">
+      New session file: <code>/fork</code> and <code>/clone</code> (not <code>/tree</code> — it stays in the same file).<br>
+      Offers a branch summary: only <code>/tree</code>, when it moves you off a branch.
+    </div>
+  </details>
+
+  <div class="box box-source">
+    <span class="box-label">Primary source</span>
+    <a href="https://pi.dev/docs/latest/sessions.md">Sessions</a> and <a href="https://pi.dev/docs/latest/compaction.md">Compaction &amp; Branch Summarization</a>.
+  </div>
+
+  <div class="box box-ask">
+    <span class="box-label">Stuck, or something behaved differently than expected?</span>
+    Ask your teacher (me) directly — describe what you ran and what happened. That's exactly the kind of detail that turns into the next lesson or a learning record.
+  </div>
+
+  <footer class="lesson-nav">
+    <span>See also: <a href="../reference/pi-essentials.html">Pi Essentials reference</a></span>
+    <span>Next: try <code>/tree</code> on a real branching decision, then come back and tell me how it went →</span>
+  </footer>
+</article>
+</body>
+</html>
