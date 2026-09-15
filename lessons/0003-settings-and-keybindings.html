@@ -48,6 +48,12 @@
     <tr><td><code>externalEditor</code></td><td><code>$VISUAL</code>/<code>$EDITOR</code>/nano</td><td>What Ctrl+G opens — for VS Code, use <code>"code --wait"</code></td></tr>
     <tr><td><code>doubleEscapeAction</code></td><td><code>"tree"</code></td><td>What double-Escape does: <code>"tree"</code>, <code>"fork"</code>, or <code>"none"</code></td></tr>
   </table>
+
+  <div class="box box-mission">
+    <span class="box-label">Subscription billing warning</span>
+    Anthropic subscription authentication in third-party harnesses such as Pi draws from <a href="https://claude.ai/settings/usage">paid extra usage</a> at per-token rates rather than the normal Claude Pro/Max plan allowance. This differs from Anthropic's official Claude Code client, whose usage can count against the plan allowance. An Anthropic API key is also billed separately through the API. If you have a ChatGPT Plus or Pro subscription, Pi's <code>openai-codex</code> provider is the subscription-backed alternative; for example: <code>"defaultProvider": "openai-codex"</code>, <code>"defaultModel": "gpt-5.6-sol"</code>, and <code>"defaultThinkingLevel": "medium"</code>.
+  </div>
+
   <p>Full reference (thinking budgets, terminal/image handling, retry/backoff, message delivery transport, markdown rendering, and the resource-loading arrays for extensions/skills/prompts/themes/packages) is in the primary source below — there's a lot more than fits here, and most of it you'll only touch once you hit a specific need.</p>
 
   <h2>3. Resource-loading settings tie the whole system together</h2>
